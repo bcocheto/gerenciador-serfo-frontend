@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -26,14 +27,22 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { masks, parsers } from "@/lib/masks";
 
 const contribuicaoSchema = z.object({
   pessoaId: z.string().min(1, "Selecione uma pessoa"),
-  tipo: z.enum(["Voluntário", "Assistido"]),
-  valor: z.string().min(1, "Valor é obrigatório").transform((val) => parseFloat(val.replace(",", "."))),
+  tipo: z.enum(["Voluntário", "Assistido"], {
+    required_error: "Selecione o tipo de pessoa",
+  }),
+  valor: z.string()
+    .min(1, "Valor é obrigatório")
+    .refine((val) => {
+      const numericValue = parsers.currency(val);
+      return numericValue > 0;
+    }, "Valor deve ser maior que zero"),
   vencimento: z.date({
     required_error: "Data de vencimento é obrigatória",
   }),
@@ -48,29 +57,39 @@ interface ContribuicaoFormProps {
 
 export function ContribuicaoForm({ onSuccess }: ContribuicaoFormProps) {
   const { toast } = useToast();
-  
+
   const form = useForm<ContribuicaoFormData>({
     resolver: zodResolver(contribuicaoSchema),
     defaultValues: {
       pessoaId: "",
       tipo: "Voluntário",
-      valor: "" as any,
+      valor: "",
       descricao: "",
     },
   });
 
   const onSubmit = async (data: ContribuicaoFormData) => {
     try {
+      // Converte valor para número
+      const valorNumerico = parsers.currency(data.valor);
+
+      const formattedData = {
+        ...data,
+        valor: valorNumerico,
+      };
+
       // TODO: Integrar com API real
-      console.log("Dados da contribuição:", data);
-      
+      console.log("Dados da contribuição:", formattedData);
+
       toast({
         title: "Contribuição cadastrada",
-        description: `Contribuição de R$ ${data.valor.toFixed(2)} cadastrada com sucesso!`,
+        description: `Contribuição de R$ ${valorNumerico.toFixed(2).replace(".", ",")} cadastrada com sucesso!`,
       });
-      
+
+      form.reset();
       onSuccess?.();
     } catch (error) {
+      console.error("Erro ao cadastrar contribuição:", error);
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao cadastrar a contribuição",
@@ -144,14 +163,23 @@ export function ContribuicaoForm({ onSuccess }: ContribuicaoFormProps) {
               <FormItem>
                 <FormLabel>Valor *</FormLabel>
                 <FormControl>
-                  <Input
-                    type="text"
-                    placeholder="150.00"
-                    {...field}
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+                      R$
+                    </span>
+                    <Input
+                      className="pl-8"
+                      placeholder="150,00"
+                      {...field}
+                      onChange={(e) => {
+                        const maskedValue = masks.currency(e.target.value);
+                        field.onChange(maskedValue);
+                      }}
+                    />
+                  </div>
                 </FormControl>
                 <FormDescription>
-                  Formato: 150.00 ou 150,00
+                  Valor da contribuição em reais
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -206,16 +234,39 @@ export function ContribuicaoForm({ onSuccess }: ContribuicaoFormProps) {
             <FormItem>
               <FormLabel>Descrição</FormLabel>
               <FormControl>
-                <Input placeholder="Observações sobre a contribuição..." {...field} />
+                <Textarea
+                  placeholder="Observações sobre a contribuição..."
+                  className="min-h-[80px]"
+                  {...field}
+                />
               </FormControl>
+              <FormDescription>
+                Informações adicionais sobre a contribuição (opcional)
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
         <div className="flex gap-3">
-          <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button
+            type="submit"
+            disabled={form.formState.isSubmitting}
+            className="flex items-center gap-2"
+          >
+            {form.formState.isSubmitting && (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )}
             {form.formState.isSubmitting ? "Cadastrando..." : "Cadastrar Contribuição"}
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => form.reset()}
+            disabled={form.formState.isSubmitting}
+          >
+            Limpar Formulário
           </Button>
         </div>
       </form>

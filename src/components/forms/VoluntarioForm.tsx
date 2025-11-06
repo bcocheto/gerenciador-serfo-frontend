@@ -13,14 +13,27 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { masks, validators, parsers } from "@/lib/masks";
+import { Loader2 } from "lucide-react";
 
 const voluntarioSchema = z.object({
-  nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
-  email: z.string().email("Email inválido"),
-  telefone: z.string().min(10, "Telefone inválido"),
-  cpf: z.string().regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, "CPF inválido (formato: 000.000.000-00)"),
+  nome: z.string()
+    .min(3, "Nome deve ter pelo menos 3 caracteres")
+    .max(100, "Nome deve ter no máximo 100 caracteres")
+    .regex(/^[a-zA-ZÀ-ÿ\s]+$/, "Nome deve conter apenas letras e espaços"),
+  email: z.string()
+    .min(1, "Email é obrigatório")
+    .email("Email inválido"),
+  telefone: z.string()
+    .min(1, "Telefone é obrigatório")
+    .refine((val) => validators.phone(val), "Telefone inválido"),
+  cpf: z.string()
+    .min(1, "CPF é obrigatório")
+    .refine((val) => validators.cpf(val), "CPF inválido"),
   endereco: z.string().optional(),
+  observacoes: z.string().optional(),
   ativo: z.boolean().default(true),
 });
 
@@ -34,7 +47,7 @@ interface VoluntarioFormProps {
 
 export function VoluntarioForm({ onSuccess, defaultValues, isEdit = false }: VoluntarioFormProps) {
   const { toast } = useToast();
-  
+
   const form = useForm<VoluntarioFormData>({
     resolver: zodResolver(voluntarioSchema),
     defaultValues: {
@@ -43,6 +56,7 @@ export function VoluntarioForm({ onSuccess, defaultValues, isEdit = false }: Vol
       telefone: "",
       cpf: "",
       endereco: "",
+      observacoes: "",
       ativo: true,
       ...defaultValues,
     },
@@ -50,16 +64,25 @@ export function VoluntarioForm({ onSuccess, defaultValues, isEdit = false }: Vol
 
   const onSubmit = async (data: VoluntarioFormData) => {
     try {
+      // Limpa máscaras antes de enviar
+      const formattedData = {
+        ...data,
+        telefone: parsers.phone(data.telefone),
+        cpf: parsers.cpf(data.cpf),
+      };
+
       // TODO: Integrar com API real
-      console.log("Dados do voluntário:", data);
-      
+      console.log("Dados do voluntário:", formattedData);
+
       toast({
         title: isEdit ? "Voluntário atualizado" : "Voluntário cadastrado",
         description: `${data.nome} foi ${isEdit ? "atualizado" : "cadastrado"} com sucesso!`,
       });
-      
+
+      form.reset();
       onSuccess?.();
     } catch (error) {
+      console.error("Erro ao salvar voluntário:", error);
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao salvar o voluntário",
@@ -107,8 +130,19 @@ export function VoluntarioForm({ onSuccess, defaultValues, isEdit = false }: Vol
               <FormItem>
                 <FormLabel>Telefone *</FormLabel>
                 <FormControl>
-                  <Input placeholder="(11) 98765-4321" {...field} />
+                  <Input
+                    placeholder="(11) 98765-4321"
+                    {...field}
+                    onChange={(e) => {
+                      const maskedValue = masks.phone(e.target.value);
+                      field.onChange(maskedValue);
+                    }}
+                    maxLength={15}
+                  />
                 </FormControl>
+                <FormDescription>
+                  Celular ou telefone fixo
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -122,10 +156,18 @@ export function VoluntarioForm({ onSuccess, defaultValues, isEdit = false }: Vol
             <FormItem>
               <FormLabel>CPF *</FormLabel>
               <FormControl>
-                <Input placeholder="123.456.789-00" {...field} />
+                <Input
+                  placeholder="123.456.789-00"
+                  {...field}
+                  onChange={(e) => {
+                    const maskedValue = masks.cpf(e.target.value);
+                    field.onChange(maskedValue);
+                  }}
+                  maxLength={14}
+                />
               </FormControl>
               <FormDescription>
-                Formato: 000.000.000-00
+                Documento de identificação
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -139,8 +181,32 @@ export function VoluntarioForm({ onSuccess, defaultValues, isEdit = false }: Vol
             <FormItem>
               <FormLabel>Endereço</FormLabel>
               <FormControl>
-                <Input placeholder="Rua Exemplo, 123" {...field} />
+                <Input placeholder="Rua Exemplo, 123 - Bairro" {...field} />
               </FormControl>
+              <FormDescription>
+                Endereço completo (opcional)
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="observacoes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Observações</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Informações adicionais sobre o voluntário..."
+                  className="min-h-[80px]"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Informações complementares (opcional)
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -168,13 +234,31 @@ export function VoluntarioForm({ onSuccess, defaultValues, isEdit = false }: Vol
         />
 
         <div className="flex gap-3">
-          <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button
+            type="submit"
+            disabled={form.formState.isSubmitting}
+            className="flex items-center gap-2"
+          >
+            {form.formState.isSubmitting && (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )}
             {form.formState.isSubmitting
               ? "Salvando..."
               : isEdit
-              ? "Atualizar Voluntário"
-              : "Cadastrar Voluntário"}
+                ? "Atualizar Voluntário"
+                : "Cadastrar Voluntário"}
           </Button>
+
+          {!isEdit && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => form.reset()}
+              disabled={form.formState.isSubmitting}
+            >
+              Limpar Formulário
+            </Button>
+          )}
         </div>
       </form>
     </Form>

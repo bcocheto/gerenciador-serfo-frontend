@@ -13,14 +13,27 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { masks, validators, parsers } from "@/lib/masks";
+import { Loader2 } from "lucide-react";
 
 const assistidoSchema = z.object({
-  nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
-  email: z.string().email("Email inválido"),
-  telefone: z.string().min(10, "Telefone inválido"),
-  cpf: z.string().regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, "CPF inválido (formato: 000.000.000-00)"),
+  nome: z.string()
+    .min(3, "Nome deve ter pelo menos 3 caracteres")
+    .max(100, "Nome deve ter no máximo 100 caracteres")
+    .regex(/^[a-zA-ZÀ-ÿ\s]+$/, "Nome deve conter apenas letras e espaços"),
+  email: z.string()
+    .min(1, "Email é obrigatório")
+    .email("Email inválido"),
+  telefone: z.string()
+    .min(1, "Telefone é obrigatório")
+    .refine((val) => validators.phone(val), "Telefone inválido"),
+  cpf: z.string()
+    .min(1, "CPF é obrigatório")
+    .refine((val) => validators.cpf(val), "CPF inválido"),
   endereco: z.string().optional(),
+  observacoes: z.string().optional(),
   ativo: z.boolean().default(true),
 });
 
@@ -34,7 +47,7 @@ interface AssistidoFormProps {
 
 export function AssistidoForm({ onSuccess, defaultValues, isEdit = false }: AssistidoFormProps) {
   const { toast } = useToast();
-  
+
   const form = useForm<AssistidoFormData>({
     resolver: zodResolver(assistidoSchema),
     defaultValues: {
@@ -43,6 +56,7 @@ export function AssistidoForm({ onSuccess, defaultValues, isEdit = false }: Assi
       telefone: "",
       cpf: "",
       endereco: "",
+      observacoes: "",
       ativo: true,
       ...defaultValues,
     },
@@ -50,16 +64,25 @@ export function AssistidoForm({ onSuccess, defaultValues, isEdit = false }: Assi
 
   const onSubmit = async (data: AssistidoFormData) => {
     try {
+      // Limpa máscaras antes de enviar
+      const formattedData = {
+        ...data,
+        telefone: parsers.phone(data.telefone),
+        cpf: parsers.cpf(data.cpf),
+      };
+
       // TODO: Integrar com API real
-      console.log("Dados do assistido:", data);
-      
+      console.log("Dados do assistido:", formattedData);
+
       toast({
         title: isEdit ? "Assistido atualizado" : "Assistido cadastrado",
         description: `${data.nome} foi ${isEdit ? "atualizado" : "cadastrado"} com sucesso!`,
       });
-      
+
+      form.reset();
       onSuccess?.();
     } catch (error) {
+      console.error("Erro ao salvar assistido:", error);
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao salvar o assistido",
@@ -107,8 +130,19 @@ export function AssistidoForm({ onSuccess, defaultValues, isEdit = false }: Assi
               <FormItem>
                 <FormLabel>Telefone *</FormLabel>
                 <FormControl>
-                  <Input placeholder="(11) 91234-5678" {...field} />
+                  <Input
+                    placeholder="(11) 91234-5678"
+                    {...field}
+                    onChange={(e) => {
+                      const maskedValue = masks.phone(e.target.value);
+                      field.onChange(maskedValue);
+                    }}
+                    maxLength={15}
+                  />
                 </FormControl>
+                <FormDescription>
+                  Celular ou telefone fixo
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -122,10 +156,18 @@ export function AssistidoForm({ onSuccess, defaultValues, isEdit = false }: Assi
             <FormItem>
               <FormLabel>CPF *</FormLabel>
               <FormControl>
-                <Input placeholder="111.222.333-44" {...field} />
+                <Input
+                  placeholder="111.222.333-44"
+                  {...field}
+                  onChange={(e) => {
+                    const maskedValue = masks.cpf(e.target.value);
+                    field.onChange(maskedValue);
+                  }}
+                  maxLength={14}
+                />
               </FormControl>
               <FormDescription>
-                Formato: 000.000.000-00
+                Documento de identificação
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -139,8 +181,32 @@ export function AssistidoForm({ onSuccess, defaultValues, isEdit = false }: Assi
             <FormItem>
               <FormLabel>Endereço</FormLabel>
               <FormControl>
-                <Input placeholder="Rua Exemplo, 123" {...field} />
+                <Input placeholder="Rua Exemplo, 123 - Bairro" {...field} />
               </FormControl>
+              <FormDescription>
+                Endereço completo (opcional)
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="observacoes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Observações</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Informações adicionais sobre o assistido..."
+                  className="min-h-[80px]"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Informações complementares (opcional)
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -168,13 +234,31 @@ export function AssistidoForm({ onSuccess, defaultValues, isEdit = false }: Assi
         />
 
         <div className="flex gap-3">
-          <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button
+            type="submit"
+            disabled={form.formState.isSubmitting}
+            className="flex items-center gap-2"
+          >
+            {form.formState.isSubmitting && (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )}
             {form.formState.isSubmitting
               ? "Salvando..."
               : isEdit
-              ? "Atualizar Assistido"
-              : "Cadastrar Assistido"}
+                ? "Atualizar Assistido"
+                : "Cadastrar Assistido"}
           </Button>
+
+          {!isEdit && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => form.reset()}
+              disabled={form.formState.isSubmitting}
+            >
+              Limpar Formulário
+            </Button>
+          )}
         </div>
       </form>
     </Form>
