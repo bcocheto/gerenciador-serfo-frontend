@@ -17,6 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { masks, validators, parsers } from "@/lib/masks";
 import { Loader2 } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { voluntarioService, Voluntario } from "@/services/voluntarioService";
 
 const voluntarioSchema = z.object({
   nome: z.string()
@@ -29,67 +31,97 @@ const voluntarioSchema = z.object({
   telefone: z.string()
     .min(1, "Telefone é obrigatório")
     .refine((val) => validators.phone(val), "Telefone inválido"),
-  cpf: z.string()
-    .min(1, "CPF é obrigatório")
-    .refine((val) => validators.cpf(val), "CPF inválido"),
-  endereco: z.string().optional(),
+  endereco: z.string().min(1, "Endereço é obrigatório"),
+  dataNascimento: z.string().min(1, "Data de nascimento é obrigatória"),
+  dataIngresso: z.string().min(1, "Data de ingresso é obrigatória"),
   observacoes: z.string().optional(),
-  ativo: z.boolean().default(true),
 });
 
 type VoluntarioFormData = z.infer<typeof voluntarioSchema>;
 
 interface VoluntarioFormProps {
   onSuccess?: () => void;
-  defaultValues?: Partial<VoluntarioFormData>;
+  voluntario?: Voluntario;
   isEdit?: boolean;
 }
 
-export function VoluntarioForm({ onSuccess, defaultValues, isEdit = false }: VoluntarioFormProps) {
+export function VoluntarioForm({ onSuccess, voluntario, isEdit = false }: VoluntarioFormProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const form = useForm<VoluntarioFormData>({
     resolver: zodResolver(voluntarioSchema),
     defaultValues: {
-      nome: "",
-      email: "",
-      telefone: "",
-      cpf: "",
-      endereco: "",
-      observacoes: "",
-      ativo: true,
-      ...defaultValues,
+      nome: voluntario?.nome || "",
+      email: voluntario?.email || "",
+      telefone: voluntario?.telefone || "",
+      endereco: voluntario?.endereco || "",
+      dataNascimento: voluntario?.dataNascimento || "",
+      dataIngresso: voluntario?.dataIngresso || "",
+      observacoes: voluntario?.observacoes || "",
+    },
+  });
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: voluntarioService.createVoluntario,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['voluntarios'] });
+      toast({
+        title: "Voluntário cadastrado",
+        description: "Voluntário cadastrado com sucesso!",
+      });
+      form.reset();
+      onSuccess?.();
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao cadastrar voluntário.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: VoluntarioFormData }) =>
+      voluntarioService.updateVoluntario(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['voluntarios'] });
+      toast({
+        title: "Voluntário atualizado",
+        description: "Voluntário atualizado com sucesso!",
+      });
+      onSuccess?.();
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar voluntário.",
+        variant: "destructive",
+      });
     },
   });
 
   const onSubmit = async (data: VoluntarioFormData) => {
-    try {
-      // Limpa máscaras antes de enviar
-      const formattedData = {
-        ...data,
-        telefone: parsers.phone(data.telefone),
-        cpf: parsers.cpf(data.cpf),
-      };
+    const formattedData = {
+      nome: data.nome,
+      email: data.email,
+      telefone: parsers.phone(data.telefone),
+      endereco: data.endereco,
+      dataNascimento: data.dataNascimento,
+      dataIngresso: data.dataIngresso,
+      observacoes: data.observacoes,
+    };
 
-      // TODO: Integrar com API real
-      console.log("Dados do voluntário:", formattedData);
-
-      toast({
-        title: isEdit ? "Voluntário atualizado" : "Voluntário cadastrado",
-        description: `${data.nome} foi ${isEdit ? "atualizado" : "cadastrado"} com sucesso!`,
-      });
-
-      form.reset();
-      onSuccess?.();
-    } catch (error) {
-      console.error("Erro ao salvar voluntário:", error);
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao salvar o voluntário",
-        variant: "destructive",
-      });
+    if (isEdit && voluntario?.id) {
+      updateMutation.mutate({ id: voluntario.id, data: formattedData });
+    } else {
+      createMutation.mutate(formattedData);
     }
   };
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
     <Form {...form}>
@@ -149,30 +181,41 @@ export function VoluntarioForm({ onSuccess, defaultValues, isEdit = false }: Vol
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="cpf"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>CPF *</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="123.456.789-00"
-                  {...field}
-                  onChange={(e) => {
-                    const maskedValue = masks.cpf(e.target.value);
-                    field.onChange(maskedValue);
-                  }}
-                  maxLength={14}
-                />
-              </FormControl>
-              <FormDescription>
-                Documento de identificação
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="dataNascimento"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Data de Nascimento *</FormLabel>
+                <FormControl>
+                  <Input
+                    type="date"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="dataIngresso"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Data de Ingresso *</FormLabel>
+                <FormControl>
+                  <Input
+                    type="date"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}
@@ -212,37 +255,18 @@ export function VoluntarioForm({ onSuccess, defaultValues, isEdit = false }: Vol
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="ativo"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Voluntário Ativo</FormLabel>
-                <FormDescription>
-                  Define se o voluntário está ativo no sistema
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+
 
         <div className="flex gap-3">
           <Button
             type="submit"
-            disabled={form.formState.isSubmitting}
+            disabled={isLoading}
             className="flex items-center gap-2"
           >
-            {form.formState.isSubmitting && (
+            {isLoading && (
               <Loader2 className="h-4 w-4 animate-spin" />
             )}
-            {form.formState.isSubmitting
+            {isLoading
               ? "Salvando..."
               : isEdit
                 ? "Atualizar Voluntário"
@@ -254,7 +278,7 @@ export function VoluntarioForm({ onSuccess, defaultValues, isEdit = false }: Vol
               type="button"
               variant="outline"
               onClick={() => form.reset()}
-              disabled={form.formState.isSubmitting}
+              disabled={isLoading}
             >
               Limpar Formulário
             </Button>

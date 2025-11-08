@@ -14,7 +14,7 @@ import Movimentacoes from "./pages/Movimentacoes";
 import NotasFiscais from "./pages/NotasFiscais";
 import Relatorios from "./pages/Relatorios";
 import NotFound from "./pages/NotFound";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider } from "./contexts/AuthContextProvider";
 
 const queryClient = new QueryClient();
 
