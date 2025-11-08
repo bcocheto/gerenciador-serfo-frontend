@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { superAdminService } from "@/services/superAdminService";
 import { useToast } from "@/hooks/use-toast";
+import { extractErrorMessage, isDependencyConflictError } from "@/lib/errorHandling";
 
 interface Sede {
   id: number;
@@ -56,9 +57,11 @@ const SuperAdminSedes: React.FC = () => {
       const data = await superAdminService.getAllSedes();
       setSedes(data);
     } catch (error) {
+      const errorMessage = extractErrorMessage(error, "Erro ao carregar dados das sedes.");
+
       toast({
         title: "Erro",
-        description: "Erro ao carregar dados das sedes.",
+        description: errorMessage,
         variant: "destructive",
       });
       console.error('Erro ao carregar sedes:', error);
@@ -100,9 +103,14 @@ const SuperAdminSedes: React.FC = () => {
       });
       loadSedes();
     } catch (error) {
+      const errorMessage = extractErrorMessage(
+        error,
+        `Erro ao ${!isAtiva ? 'ativar' : 'desativar'} sede "${nome}".`
+      );
+
       toast({
         title: "Erro",
-        description: `Erro ao ${!isAtiva ? 'ativar' : 'desativar'} sede "${nome}".`,
+        description: errorMessage,
         variant: "destructive",
       });
       console.error('Erro ao alterar status da sede:', error);
@@ -119,9 +127,14 @@ const SuperAdminSedes: React.FC = () => {
         });
         loadSedes();
       } catch (error) {
+        const errorMessage = extractErrorMessage(error, `Erro ao excluir sede "${nome}".`);
+
+        // Verificar se é erro de dependência para dar uma mensagem mais clara
+        const isDependencyError = isDependencyConflictError(error);
+
         toast({
-          title: "Erro",
-          description: `Erro ao excluir sede "${nome}".`,
+          title: isDependencyError ? "Não é possível excluir sede" : "Erro ao excluir sede",
+          description: errorMessage,
           variant: "destructive",
         });
         console.error('Erro ao excluir sede:', error);

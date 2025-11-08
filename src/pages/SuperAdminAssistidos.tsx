@@ -15,34 +15,16 @@ import {
   Edit,
   Trash2
 } from "lucide-react";
-import { superAdminService } from "@/services/superAdminService";
+import { superAdminService, SuperAdminSede } from "@/services/superAdminService";
+import { Assistido } from "@/services/assistidoService";
 import { useToast } from "@/hooks/use-toast";
+import { extractErrorMessage } from "@/lib/errorHandling";
 
-interface Assistido {
-  id: number;
-  nome: string;
-  cpf: string;
-  telefone: string;
-  endereco: string;
-  sedeId: number;
-  sede: {
-    id: number;
-    nome: string;
-    cidade: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
 
-interface Sede {
-  id: number;
-  nome: string;
-  cidade: string;
-}
 
 const SuperAdminAssistidos: React.FC = () => {
   const [assistidos, setAssistidos] = useState<Assistido[]>([]);
-  const [sedes, setSedes] = useState<Sede[]>([]);
+  const [sedes, setSedes] = useState<SuperAdminSede[]>([]);
   const [filteredAssistidos, setFilteredAssistidos] = useState<Assistido[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,9 +52,11 @@ const SuperAdminAssistidos: React.FC = () => {
       setAssistidos(assistidosData);
       setSedes(sedesData);
     } catch (error) {
+      const errorMessage = extractErrorMessage(error, "Erro ao carregar dados dos assistidos.");
+
       toast({
         title: "Erro",
-        description: "Erro ao carregar dados dos assistidos.",
+        description: errorMessage,
         variant: "destructive",
       });
       console.error('Erro ao carregar dados:', error);
@@ -86,13 +70,18 @@ const SuperAdminAssistidos: React.FC = () => {
 
     // Filtrar por termo de busca
     if (searchTerm) {
-      filtered = filtered.filter(assistido =>
-        assistido.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assistido.cpf.includes(searchTerm) ||
-        assistido.telefone.includes(searchTerm) ||
-        assistido.sede.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assistido.sede.cidade.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter(assistido => {
+        const sedeNome = assistido.sede?.nome || '';
+        // Buscar cidade da sede pelos dados das sedes carregadas
+        const sede = sedes.find(s => s.id === assistido.sedeId);
+        const sedeCidade = sede?.cidade || '';
+
+        return assistido.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (assistido.cpf && assistido.cpf.includes(searchTerm)) ||
+          (assistido.telefone && assistido.telefone.includes(searchTerm)) ||
+          sedeNome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          sedeCidade.toLowerCase().includes(searchTerm.toLowerCase());
+      });
     }
 
     // Filtrar por sede
@@ -103,19 +92,21 @@ const SuperAdminAssistidos: React.FC = () => {
     setFilteredAssistidos(filtered);
   };
 
-  const handleDeleteAssistido = async (id: number, nome: string) => {
+  const handleDeleteAssistido = async (id: string, nome: string) => {
     if (window.confirm(`Tem certeza que deseja excluir o assistido "${nome}"?`)) {
       try {
-        await superAdminService.deleteAssistido(id);
+        await superAdminService.deleteAssistido(parseInt(id));
         toast({
           title: "Sucesso",
           description: `Assistido "${nome}" excluído com sucesso.`,
         });
         loadData();
       } catch (error) {
+        const errorMessage = extractErrorMessage(error, `Erro ao excluir assistido "${nome}".`);
+
         toast({
           title: "Erro",
-          description: `Erro ao excluir assistido "${nome}".`,
+          description: errorMessage,
           variant: "destructive",
         });
         console.error('Erro ao excluir assistido:', error);
@@ -127,11 +118,17 @@ const SuperAdminAssistidos: React.FC = () => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
-  const formatCPF = (cpf: string) => {
+  const formatCPF = (cpf: string | null | undefined) => {
+    if (!cpf) {
+      return 'Não informado';
+    }
     return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   };
 
-  const formatPhone = (phone: string) => {
+  const formatPhone = (phone: string | null | undefined) => {
+    if (!phone) {
+      return 'Não informado';
+    }
     if (phone.length === 11) {
       return phone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
     } else if (phone.length === 10) {
@@ -276,11 +273,14 @@ const SuperAdminAssistidos: React.FC = () => {
                         </div>
                         <div className="flex items-center">
                           <MapPin className="h-3 w-3 mr-1" />
-                          {assistido.sede.cidade}
+                          {(() => {
+                            const sede = sedes.find(s => s.id === assistido.sedeId);
+                            return sede?.cidade || 'Cidade não informada';
+                          })()}
                         </div>
                         <div className="flex items-center">
                           <Calendar className="h-3 w-3 mr-1" />
-                          {formatDate(assistido.createdAt)}
+                          {formatDate(assistido.criadoEm)}
                         </div>
                       </div>
 
