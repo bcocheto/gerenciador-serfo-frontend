@@ -80,10 +80,10 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">
-                R$ {stats.saldoLiquido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                R$ {stats.resumoFinanceiro.saldoLiquido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {stats.saldoLiquido >= 0 ? (
+                {stats.resumoFinanceiro.saldoLiquido >= 0 ? (
                   <span className="text-success flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" />
                     Saldo positivo
@@ -105,7 +105,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">
-                R$ {stats.totalReceitas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                R$ {Number(stats.resumoFinanceiro.totalReceitas).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Mês atual
@@ -120,7 +120,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">
-                R$ {stats.totalDespesas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                R$ {stats.resumoFinanceiro.totalDespesas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Mês atual
@@ -135,10 +135,10 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">
-                {stats.inadimplencia}%
+                {Number(stats.contribuicoes.taxaAdimplencia).toFixed(1)}%
               </div>
               <p className="text-xs text-warning mt-1">
-                {stats.inadimplencia > 10 ? "Requer atenção" : "Dentro do esperado"}
+                {Number(stats.contribuicoes.taxaAdimplencia) > 10 ? "Requer atenção" : "Dentro do esperado"}
               </p>
             </CardContent>
           </Card>
@@ -154,7 +154,7 @@ export default function Dashboard() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stats.voluntariosAtivos}</div>
+              <div className="text-2xl font-bold text-foreground">{stats.pessoas.voluntariosAtivos}</div>
             </CardContent>
           </Card>
 
@@ -164,7 +164,7 @@ export default function Dashboard() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stats.assistidosAtivos}</div>
+              <div className="text-2xl font-bold text-foreground">{stats.pessoas.assistidosAtivos}</div>
             </CardContent>
           </Card>
 
@@ -174,9 +174,9 @@ export default function Dashboard() {
               <Receipt className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stats.notasPendentes}</div>
+              <div className="text-2xl font-bold text-foreground">{stats.contribuicoes.pendentes}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {stats.notasPendentes > 0 ? `${stats.notasPendentes} aguardando processamento` : "Nenhuma pendência"}
+                {stats.contribuicoes.pendentes > 0 ? `${stats.contribuicoes.pendentes} aguardando processamento` : "Nenhuma pendência"}
               </p>
             </CardContent>
           </Card>
@@ -196,9 +196,17 @@ export default function Dashboard() {
                 recentActivities.map((activity) => (
                   <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                     <div className="flex items-center gap-3">
-                      {activity.tipo === "receita" ? (
+                      {activity.tipo === "receita" || activity.tipo === "contribuicao_recebida" ? (
                         <div className="h-8 w-8 rounded-full bg-success/10 flex items-center justify-center">
                           <TrendingUp className="h-4 w-4 text-success" />
+                        </div>
+                      ) : activity.tipo === "voluntario_cadastrado" ? (
+                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Users className="h-4 w-4 text-blue-600" />
+                        </div>
+                      ) : activity.tipo === "assistido_cadastrado" ? (
+                        <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                          <Users className="h-4 w-4 text-purple-600" />
                         </div>
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -218,8 +226,17 @@ export default function Dashboard() {
                         </span>
                       </div>
                     </div>
-                    <span className={`text-sm font-bold ${activity.tipo === "receita" ? "text-success" : "text-destructive"}`}>
-                      {activity.tipo === "receita" ? "+" : ""}R$ {activity.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    <span className={`text-sm font-bold ${activity.tipo === "receita" || activity.tipo === "contribuicao_recebida"
+                        ? "text-success"
+                        : activity.tipo === "despesa"
+                          ? "text-destructive"
+                          : "text-muted-foreground"
+                      }`}>
+                      {activity.valor !== null && activity.valor !== undefined ? (
+                        `${activity.tipo === "receita" || activity.tipo === "contribuicao_recebida" ? "+" : ""}R$ ${Number(activity.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
                     </span>
                   </div>
                 ))

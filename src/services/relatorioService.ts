@@ -1,13 +1,36 @@
 import api from "./api";
 
 export interface DashboardStats {
-  saldoLiquido: number;
-  totalReceitas: number;
-  totalDespesas: number;
-  inadimplencia: number;
-  voluntariosAtivos: number;
-  assistidosAtivos: number;
-  notasPendentes: number;
+  resumoFinanceiro: {
+    saldoLiquido: number;
+    totalReceitas: string | number;
+    totalDespesas: number;
+    qtdEntradas: number;
+    qtdSaidas: number;
+  };
+  pessoas: {
+    voluntariosAtivos: number;
+    assistidosAtivos: number;
+  };
+  contribuicoes: {
+    total: number;
+    pendentes: number;
+    pagas: number;
+    atrasadas: number;
+    valorTotalPago: number;
+    taxaAdimplencia: string;
+  };
+  categorias: Record<string, { entradas: number; saidas: number }>;
+  contas: Record<string, { entradas: number; saidas: number }>;
+  movimentacoesRecentes: Array<{
+    id: number;
+    data: string;
+    descricao: string;
+    valor: string | number;
+    tipo: string;
+    categoria: string;
+    conta: string;
+  }>;
 }
 
 export interface ResumoFinanceiro {
@@ -27,10 +50,16 @@ export interface ResumoFinanceiro {
 export interface AtividadeRecente {
   id: string;
   descricao: string;
-  valor: number;
-  tipo: "receita" | "despesa";
+  valor: number | null;
+  tipo:
+    | "receita"
+    | "despesa"
+    | "voluntario_cadastrado"
+    | "assistido_cadastrado"
+    | "contribuicao_recebida";
   data: string;
   categoria?: string;
+  sede?: string | null;
 }
 
 export interface ComparativoMensal {
@@ -44,7 +73,7 @@ export const relatorioService = {
   // Buscar dados do dashboard
   getDashboardStats: async (): Promise<DashboardStats> => {
     const response = await api.get("/relatorios/dashboard");
-    return response.data;
+    return response.data.data || response.data;
   },
 
   // Buscar resumo financeiro
@@ -69,7 +98,7 @@ export const relatorioService = {
     const response = await api.get(
       `/relatorios/atividades-recentes?limite=${limite}`
     );
-    return response.data;
+    return response.data.data || response.data;
   },
 
   // Buscar comparativo mensal
