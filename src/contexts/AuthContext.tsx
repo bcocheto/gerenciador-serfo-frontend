@@ -1,16 +1,17 @@
 import { createContext } from "react";
 
-export type UserRole = "admin" | "secretario" | "tesoureiro" | "voluntario";
+export type CargoVoluntario = "PRESIDENTE" | "PRESIDENTE_ADJUNTO" | "SECRETARIO" | "TESOUREIRO" | "MEMBRO";
 
-export interface User {
-  id: string;
+export interface AuthUser {
+  id: number;
   nome: string;
   email: string;
-  role: UserRole;
+  sedeId: number;
+  cargo: CargoVoluntario;
 }
 
 export interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;

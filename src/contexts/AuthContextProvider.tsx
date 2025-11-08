@@ -2,10 +2,10 @@ import { useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "@/services/authService";
 import { useToast } from "@/hooks/use-toast";
-import { AuthContext, User } from "./AuthContext";
+import { AuthContext, AuthUser } from "./AuthContext";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
