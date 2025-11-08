@@ -47,7 +47,7 @@ const voluntarioSchema = z.object({
     required_error: "Sede é obrigatória",
     invalid_type_error: "Selecione uma sede válida",
   }),
-  cargo: z.enum(["PRESIDENTE", "SECRETARIO", "TESOUREIRO", "VOLUNTARIO"], {
+  cargo: z.enum(["PRESIDENTE", "SECRETARIO", "TESOUREIRO", "VOLUNTARIO", "SUPER_ADMIN"], {
     required_error: "Cargo é obrigatório",
   }),
 });
@@ -309,6 +309,7 @@ export function VoluntarioForm({ onSuccess, voluntario, isEdit = false }: Volunt
                     <SelectItem value="SECRETARIO">Secretário</SelectItem>
                     <SelectItem value="TESOUREIRO">Tesoureiro</SelectItem>
                     <SelectItem value="PRESIDENTE">Presidente</SelectItem>
+                    <SelectItem value="SUPER_ADMIN">Super Administrador</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormDescription>

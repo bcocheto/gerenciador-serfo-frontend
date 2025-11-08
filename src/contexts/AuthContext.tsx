@@ -1,6 +1,6 @@
 import { createContext } from "react";
 
-export type CargoVoluntario = "PRESIDENTE" | "PRESIDENTE_ADJUNTO" | "SECRETARIO" | "TESOUREIRO" | "MEMBRO";
+export type CargoVoluntario = "PRESIDENTE" | "PRESIDENTE_ADJUNTO" | "SECRETARIO" | "TESOUREIRO" | "MEMBRO" | "SUPER_ADMIN";
 
 export interface AuthUser {
   id: number;

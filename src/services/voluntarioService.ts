@@ -12,7 +12,12 @@ export interface Voluntario {
   status: Status;
   observacoes?: string;
   sedeId: number;
-  cargo: "PRESIDENTE" | "SECRETARIO" | "TESOUREIRO" | "VOLUNTARIO";
+  cargo:
+    | "PRESIDENTE"
+    | "SECRETARIO"
+    | "TESOUREIRO"
+    | "VOLUNTARIO"
+    | "SUPER_ADMIN";
   sede?: {
     id: number;
     nome: string;
@@ -30,7 +35,12 @@ export interface CreateVoluntarioRequest {
   dataIngresso: string;
   observacoes?: string;
   sedeId: number;
-  cargo: "PRESIDENTE" | "SECRETARIO" | "TESOUREIRO" | "VOLUNTARIO";
+  cargo:
+    | "PRESIDENTE"
+    | "SECRETARIO"
+    | "TESOUREIRO"
+    | "VOLUNTARIO"
+    | "SUPER_ADMIN";
 }
 
 export interface UpdateVoluntarioRequest

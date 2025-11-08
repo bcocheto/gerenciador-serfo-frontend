@@ -10,6 +10,9 @@ import {
   Settings,
   LogOut,
   Building,
+  ShieldCheck,
+  Database,
+  Activity,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -91,6 +94,39 @@ const adminItems = [
   },
 ];
 
+const superAdminItems = [
+  {
+    title: "Dashboard Super",
+    url: "/super-admin",
+    icon: ShieldCheck,
+    cargos: ["SUPER_ADMIN"],
+  },
+  {
+    title: "Gerenciar Usuários",
+    url: "/super-admin/users",
+    icon: Users,
+    cargos: ["SUPER_ADMIN"],
+  },
+  {
+    title: "Gerenciar Assistidos",
+    url: "/super-admin/assistidos",
+    icon: UserCheck,
+    cargos: ["SUPER_ADMIN"],
+  },
+  {
+    title: "Gerenciar Sedes",
+    url: "/super-admin/sedes",
+    icon: Database,
+    cargos: ["SUPER_ADMIN"],
+  },
+  {
+    title: "Logs do Sistema",
+    url: "/super-admin/logs",
+    icon: Activity,
+    cargos: ["SUPER_ADMIN"],
+  },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
@@ -106,6 +142,7 @@ export function AppSidebar() {
     hasAccess(item.cargos)
   );
   const filteredAdminItems = adminItems.filter((item) => hasAccess(item.cargos));
+  const filteredSuperAdminItems = superAdminItems.filter((item) => hasAccess(item.cargos));
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
@@ -176,6 +213,32 @@ export function AppSidebar() {
               <SidebarGroupContent>
                 <SidebarMenu>
                   {filteredAdminItems.map((item) => {
+                    const isActive = location.pathname === item.url;
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild isActive={isActive}>
+                          <NavLink to={item.url}>
+                            <item.icon className="h-4 w-4" />
+                            {!collapsed && <span>{item.title}</span>}
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
+
+        {filteredSuperAdminItems.length > 0 && (
+          <>
+            <Separator />
+            <SidebarGroup>
+              <SidebarGroupLabel>Super Admin</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {filteredSuperAdminItems.map((item) => {
                     const isActive = location.pathname === item.url;
                     return (
                       <SidebarMenuItem key={item.title}>

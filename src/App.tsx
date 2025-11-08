@@ -14,6 +14,11 @@ import Movimentacoes from "./pages/Movimentacoes";
 import NotasFiscais from "./pages/NotasFiscais";
 import Relatorios from "./pages/Relatorios";
 import Sedes from "./pages/Sedes";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import SuperAdminUsers from "./pages/SuperAdminUsers";
+import SuperAdminAssistidos from "./pages/SuperAdminAssistidos";
+import SuperAdminSedes from "./pages/SuperAdminSedes";
+import SuperAdminLogs from "./pages/SuperAdminLogs";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContextProvider";
 
@@ -104,6 +109,56 @@ const App = () => (
                 <ProtectedRoute cargos={["PRESIDENTE"]}>
                   <AppLayout>
                     <Sedes />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin"
+              element={
+                <ProtectedRoute cargos={["SUPER_ADMIN"]}>
+                  <AppLayout>
+                    <SuperAdminDashboard />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/users"
+              element={
+                <ProtectedRoute cargos={["SUPER_ADMIN"]}>
+                  <AppLayout>
+                    <SuperAdminUsers />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/assistidos"
+              element={
+                <ProtectedRoute cargos={["SUPER_ADMIN"]}>
+                  <AppLayout>
+                    <SuperAdminAssistidos />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/sedes"
+              element={
+                <ProtectedRoute cargos={["SUPER_ADMIN"]}>
+                  <AppLayout>
+                    <SuperAdminSedes />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/logs"
+              element={
+                <ProtectedRoute cargos={["SUPER_ADMIN"]}>
+                  <AppLayout>
+                    <SuperAdminLogs />
                   </AppLayout>
                 </ProtectedRoute>
               }
