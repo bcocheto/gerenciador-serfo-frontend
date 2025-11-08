@@ -1,13 +1,13 @@
 import { Navigate } from "react-router-dom";
-import { UserRole } from "@/contexts/AuthContext";
+import { CargoVoluntario } from "@/contexts/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  roles?: UserRole[];
+  cargos?: CargoVoluntario[];
 }
 
-export function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, cargos }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -25,7 +25,7 @@ export function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
     return <Navigate to="/auth" replace />;
   }
 
-  if (roles && !roles.includes(user.role)) {
+  if (cargos && !cargos.includes(user.cargo)) {
     return <Navigate to="/" replace />;
   }
 

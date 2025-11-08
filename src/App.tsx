@@ -13,6 +13,7 @@ import Contribuicoes from "./pages/Contribuicoes";
 import Movimentacoes from "./pages/Movimentacoes";
 import NotasFiscais from "./pages/NotasFiscais";
 import Relatorios from "./pages/Relatorios";
+import Sedes from "./pages/Sedes";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContextProvider";
 
@@ -40,7 +41,7 @@ const App = () => (
             <Route
               path="/voluntarios"
               element={
-                <ProtectedRoute roles={["admin", "secretario"]}>
+                <ProtectedRoute cargos={["PRESIDENTE", "SECRETARIO"]}>
                   <AppLayout>
                     <Voluntarios />
                   </AppLayout>
@@ -50,7 +51,7 @@ const App = () => (
             <Route
               path="/assistidos"
               element={
-                <ProtectedRoute roles={["admin", "secretario"]}>
+                <ProtectedRoute cargos={["PRESIDENTE", "SECRETARIO"]}>
                   <AppLayout>
                     <Assistidos />
                   </AppLayout>
@@ -60,7 +61,7 @@ const App = () => (
             <Route
               path="/contribuicoes"
               element={
-                <ProtectedRoute roles={["admin", "tesoureiro"]}>
+                <ProtectedRoute cargos={["PRESIDENTE", "TESOUREIRO"]}>
                   <AppLayout>
                     <Contribuicoes />
                   </AppLayout>
@@ -70,7 +71,7 @@ const App = () => (
             <Route
               path="/movimentacoes"
               element={
-                <ProtectedRoute roles={["admin", "tesoureiro"]}>
+                <ProtectedRoute cargos={["PRESIDENTE", "TESOUREIRO"]}>
                   <AppLayout>
                     <Movimentacoes />
                   </AppLayout>
@@ -80,7 +81,7 @@ const App = () => (
             <Route
               path="/notas-fiscais"
               element={
-                <ProtectedRoute roles={["admin", "tesoureiro"]}>
+                <ProtectedRoute cargos={["PRESIDENTE", "TESOUREIRO"]}>
                   <AppLayout>
                     <NotasFiscais />
                   </AppLayout>
@@ -90,9 +91,19 @@ const App = () => (
             <Route
               path="/relatorios"
               element={
-                <ProtectedRoute roles={["admin", "tesoureiro"]}>
+                <ProtectedRoute cargos={["PRESIDENTE", "TESOUREIRO"]}>
                   <AppLayout>
                     <Relatorios />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sedes"
+              element={
+                <ProtectedRoute cargos={["PRESIDENTE"]}>
+                  <AppLayout>
+                    <Sedes />
                   </AppLayout>
                 </ProtectedRoute>
               }

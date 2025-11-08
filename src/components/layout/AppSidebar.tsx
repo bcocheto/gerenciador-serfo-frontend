@@ -9,6 +9,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  Building,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -32,19 +33,19 @@ const menuItems = [
     title: "Dashboard",
     url: "/",
     icon: LayoutDashboard,
-    roles: ["admin", "secretario", "tesoureiro", "voluntario"],
+    cargos: ["PRESIDENTE", "SECRETARIO", "TESOUREIRO", "VOLUNTARIO"],
   },
   {
     title: "Voluntários",
     url: "/voluntarios",
     icon: UserCheck,
-    roles: ["admin", "secretario"],
+    cargos: ["PRESIDENTE", "SECRETARIO"],
   },
   {
     title: "Assistidos",
     url: "/assistidos",
     icon: Users,
-    roles: ["admin", "secretario"],
+    cargos: ["PRESIDENTE", "SECRETARIO"],
   },
 ];
 
@@ -53,19 +54,19 @@ const financeiroItems = [
     title: "Contribuições",
     url: "/contribuicoes",
     icon: DollarSign,
-    roles: ["admin", "tesoureiro"],
+    cargos: ["PRESIDENTE", "TESOUREIRO"],
   },
   {
     title: "Movimentações",
     url: "/movimentacoes",
     icon: FileText,
-    roles: ["admin", "tesoureiro"],
+    cargos: ["PRESIDENTE", "TESOUREIRO"],
   },
   {
     title: "Notas Fiscais",
     url: "/notas-fiscais",
     icon: Receipt,
-    roles: ["admin", "tesoureiro"],
+    cargos: ["PRESIDENTE", "TESOUREIRO"],
   },
 ];
 
@@ -74,13 +75,19 @@ const adminItems = [
     title: "Relatórios",
     url: "/relatorios",
     icon: BarChart3,
-    roles: ["admin", "tesoureiro"],
+    cargos: ["PRESIDENTE", "TESOUREIRO"],
+  },
+  {
+    title: "Sedes",
+    url: "/sedes",
+    icon: Building,
+    cargos: ["PRESIDENTE"],
   },
   {
     title: "Configurações",
     url: "/configuracoes",
     icon: Settings,
-    roles: ["admin"],
+    cargos: ["PRESIDENTE"],
   },
 ];
 
@@ -90,15 +97,15 @@ export function AppSidebar() {
   const { user, logout } = useAuth();
   const collapsed = state === "collapsed";
 
-  const hasAccess = (roles: string[]) => {
-    return user && roles.includes(user.role);
+  const hasAccess = (cargos: string[]) => {
+    return user && cargos.includes(user.cargo);
   };
 
-  const filteredMenuItems = menuItems.filter((item) => hasAccess(item.roles));
+  const filteredMenuItems = menuItems.filter((item) => hasAccess(item.cargos));
   const filteredFinanceiroItems = financeiroItems.filter((item) =>
-    hasAccess(item.roles)
+    hasAccess(item.cargos)
   );
-  const filteredAdminItems = adminItems.filter((item) => hasAccess(item.roles));
+  const filteredAdminItems = adminItems.filter((item) => hasAccess(item.cargos));
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">

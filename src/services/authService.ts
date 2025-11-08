@@ -1,5 +1,5 @@
 import api from "./api";
-import { User } from "@/contexts/AuthContext";
+import { AuthUser } from "@/contexts/AuthContext";
 
 export interface LoginRequest {
   email: string;
@@ -7,7 +7,7 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  user: User;
+  user: AuthUser;
   token: string;
 }
 
@@ -34,7 +34,7 @@ export const authService = {
   },
 
   // Verificar se o token é válido
-  verifyToken: async (): Promise<User> => {
+  verifyToken: async (): Promise<AuthUser> => {
     const response = await api.get("/auth/me");
     return response.data;
   },

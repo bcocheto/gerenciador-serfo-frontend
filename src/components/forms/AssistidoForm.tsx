@@ -13,11 +13,19 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { masks, validators, parsers } from "@/lib/masks";
 import { Loader2 } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { assistidoService, Assistido } from "@/services/assistidoService";
+import { sedeService } from "@/services/sedeService";
 
 const assistidoSchema = z.object({
   nome: z.string()
@@ -38,6 +46,10 @@ const assistidoSchema = z.object({
   situacaoSocial: z.string().min(1, "Situação social é obrigatória"),
   observacoes: z.string().optional(),
   dataInicio: z.string().min(1, "Data de início é obrigatória"),
+  sedeId: z.number({
+    required_error: "Sede é obrigatória",
+    invalid_type_error: "Selecione uma sede válida",
+  }),
 });
 
 type AssistidoFormData = z.infer<typeof assistidoSchema>;
@@ -51,6 +63,12 @@ interface AssistidoFormProps {
 export function AssistidoForm({ onSuccess, assistido, isEdit = false }: AssistidoFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Buscar sedes ativas para o select
+  const { data: sedes = [], isLoading: sedesLoading } = useQuery({
+    queryKey: ["sedes", "ativas"],
+    queryFn: () => sedeService.listAtivas(),
+  });
 
   const form = useForm<AssistidoFormData>({
     resolver: zodResolver(assistidoSchema),
@@ -68,6 +86,7 @@ export function AssistidoForm({ onSuccess, assistido, isEdit = false }: Assistid
       situacaoSocial: assistido?.situacaoSocial || "",
       observacoes: assistido?.observacoes || "",
       dataInicio: assistido?.dataInicio || "",
+      sedeId: assistido?.sedeId || undefined,
     },
   });
 
@@ -127,6 +146,7 @@ export function AssistidoForm({ onSuccess, assistido, isEdit = false }: Assistid
       situacaoSocial: data.situacaoSocial,
       observacoes: data.observacoes || undefined,
       dataInicio: data.dataInicio,
+      sedeId: data.sedeId,
     };
 
     if (isEdit && assistido?.id) {
@@ -353,6 +373,38 @@ export function AssistidoForm({ onSuccess, assistido, isEdit = false }: Assistid
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="sedeId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Sede *</FormLabel>
+              <Select
+                onValueChange={(value) => field.onChange(Number(value))}
+                value={field.value?.toString() || ""}
+                disabled={sedesLoading}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma sede" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {sedes.map((sede) => (
+                    <SelectItem key={sede.id} value={sede.id.toString()}>
+                      {sede.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Sede onde o assistido será atendido
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

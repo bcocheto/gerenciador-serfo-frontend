@@ -11,6 +11,12 @@ export interface Voluntario {
   dataIngresso: string;
   status: Status;
   observacoes?: string;
+  sedeId: number;
+  cargo: "PRESIDENTE" | "SECRETARIO" | "TESOUREIRO" | "VOLUNTARIO";
+  sede?: {
+    id: number;
+    nome: string;
+  };
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -23,6 +29,8 @@ export interface CreateVoluntarioRequest {
   dataNascimento: string;
   dataIngresso: string;
   observacoes?: string;
+  sedeId: number;
+  cargo: "PRESIDENTE" | "SECRETARIO" | "TESOUREIRO" | "VOLUNTARIO";
 }
 
 export interface UpdateVoluntarioRequest

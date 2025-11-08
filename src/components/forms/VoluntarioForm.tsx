@@ -14,11 +14,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { masks, validators, parsers } from "@/lib/masks";
 import { Loader2 } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { voluntarioService, Voluntario } from "@/services/voluntarioService";
+import { sedeService } from "@/services/sedeService";
 
 const voluntarioSchema = z.object({
   nome: z.string()
@@ -35,6 +43,13 @@ const voluntarioSchema = z.object({
   dataNascimento: z.string().min(1, "Data de nascimento é obrigatória"),
   dataIngresso: z.string().min(1, "Data de ingresso é obrigatória"),
   observacoes: z.string().optional(),
+  sedeId: z.number({
+    required_error: "Sede é obrigatória",
+    invalid_type_error: "Selecione uma sede válida",
+  }),
+  cargo: z.enum(["PRESIDENTE", "SECRETARIO", "TESOUREIRO", "VOLUNTARIO"], {
+    required_error: "Cargo é obrigatório",
+  }),
 });
 
 type VoluntarioFormData = z.infer<typeof voluntarioSchema>;
@@ -49,6 +64,12 @@ export function VoluntarioForm({ onSuccess, voluntario, isEdit = false }: Volunt
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Buscar sedes ativas para o select
+  const { data: sedes = [], isLoading: sedesLoading } = useQuery({
+    queryKey: ["sedes", "ativas"],
+    queryFn: () => sedeService.listAtivas(),
+  });
+
   const form = useForm<VoluntarioFormData>({
     resolver: zodResolver(voluntarioSchema),
     defaultValues: {
@@ -59,6 +80,8 @@ export function VoluntarioForm({ onSuccess, voluntario, isEdit = false }: Volunt
       dataNascimento: voluntario?.dataNascimento || "",
       dataIngresso: voluntario?.dataIngresso || "",
       observacoes: voluntario?.observacoes || "",
+      sedeId: voluntario?.sedeId || undefined,
+      cargo: voluntario?.cargo || "VOLUNTARIO",
     },
   });
 
@@ -112,6 +135,8 @@ export function VoluntarioForm({ onSuccess, voluntario, isEdit = false }: Volunt
       dataNascimento: data.dataNascimento,
       dataIngresso: data.dataIngresso,
       observacoes: data.observacoes,
+      sedeId: data.sedeId,
+      cargo: data.cargo,
     };
 
     if (isEdit && voluntario?.id) {
@@ -233,6 +258,67 @@ export function VoluntarioForm({ onSuccess, voluntario, isEdit = false }: Volunt
             </FormItem>
           )}
         />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="sedeId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sede *</FormLabel>
+                <Select
+                  onValueChange={(value) => field.onChange(Number(value))}
+                  value={field.value?.toString() || ""}
+                  disabled={sedesLoading}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma sede" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {sedes.map((sede) => (
+                      <SelectItem key={sede.id} value={sede.id.toString()}>
+                        {sede.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Sede onde o voluntário atua
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="cargo"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cargo *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um cargo" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="VOLUNTARIO">Voluntário</SelectItem>
+                    <SelectItem value="SECRETARIO">Secretário</SelectItem>
+                    <SelectItem value="TESOUREIRO">Tesoureiro</SelectItem>
+                    <SelectItem value="PRESIDENTE">Presidente</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Função do voluntário na organização
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}

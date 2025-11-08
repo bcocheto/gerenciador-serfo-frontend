@@ -17,6 +17,11 @@ export interface Assistido {
   observacoes?: string;
   dataInicio: string;
   status: Status;
+  sedeId: number;
+  sede?: {
+    id: number;
+    nome: string;
+  };
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -35,6 +40,7 @@ export interface CreateAssistidoRequest {
   situacaoSocial: string;
   observacoes?: string;
   dataInicio: string;
+  sedeId: number;
 }
 
 export interface UpdateAssistidoRequest
